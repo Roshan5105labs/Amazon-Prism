@@ -54,6 +54,9 @@ class RoutingDecisionType(str, Enum):
     RESELL = "RESELL"
     BUNDLE_RESALE = "BUNDLE_RESALE"
     REFURBISH = "REFURBISH"
+    P2P_RESALE = "P2P_RESALE"
+    EXCHANGE = "EXCHANGE"
+    RETURNLESS = "RETURNLESS"
     DONATE = "DONATE"
     RECYCLE = "RECYCLE"
     LIQUIDATE = "LIQUIDATE"
@@ -111,6 +114,20 @@ GRADE_BUNDLE_FACTOR = {
 
 MANUAL_REVIEW_CONFIDENCE_THRESHOLD = 0.65
 TRUST_BADGE_DEFAULT = "Amazon Prism Verified"
+
+GREEN_CREDIT_POINTS = {
+    RoutingDecisionType.REFURBISH: 15,
+    RoutingDecisionType.P2P_RESALE: 12,
+    RoutingDecisionType.DONATE: 10,
+    RoutingDecisionType.EXCHANGE: 8,
+    RoutingDecisionType.RETURNLESS: 6,
+    RoutingDecisionType.RESELL: 5,
+    RoutingDecisionType.BUNDLE_RESALE: 5,
+    RoutingDecisionType.RECYCLE: 4,
+    RoutingDecisionType.LIQUIDATE: 2,
+    RoutingDecisionType.SEND_TO_VENDOR_OR_WAREHOUSE: 0,
+    RoutingDecisionType.MANUAL_REVIEW: 0,
+}
 
 ALL_FULFILLMENT_TYPES = tuple(item.value for item in FulfillmentType)
 ALL_DEMAND_LEVELS = tuple(item.value for item in DemandLevel)

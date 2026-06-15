@@ -11,6 +11,12 @@ def build_health_card(assessment: AIAssessment, routing_decision: RoutingDecisio
         RoutingDecisionType.REFURBISH,
     }:
         green_impact = "Extends usable product life and reduces avoidable returns waste."
+    elif routing_decision.decision == RoutingDecisionType.P2P_RESALE:
+        green_impact = "Enables local resale and avoids unnecessary reverse-logistics movement."
+    elif routing_decision.decision == RoutingDecisionType.EXCHANGE:
+        green_impact = "Prevents an avoidable return loop by routing the customer to a better-fit replacement."
+    elif routing_decision.decision == RoutingDecisionType.RETURNLESS:
+        green_impact = "Avoids low-value reverse logistics while keeping the item out of landfill."
     elif routing_decision.decision == RoutingDecisionType.DONATE:
         green_impact = "Redirects a usable product to reuse instead of disposal."
     elif routing_decision.decision == RoutingDecisionType.RECYCLE:

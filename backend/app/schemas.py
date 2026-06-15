@@ -121,6 +121,7 @@ class RoutingDecisionRead(BaseModel):
     reason: str
     requires_vendor_permission: bool
     vendor_permission_status: VendorPermissionStatus
+    green_credits_awarded: int = 0
     created_at: datetime
 
 
@@ -209,3 +210,29 @@ class PreventionResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     app_name: str
+
+
+class CaseGreenCreditsResponse(BaseModel):
+    return_case_id: uuid.UUID
+    decision: Optional[RoutingDecisionType] = None
+    green_credits_awarded: int = 0
+
+
+class GreenCreditSummaryResponse(BaseModel):
+    total_credits: int
+    cases_counted: int
+    credits_by_disposition: dict[str, int] = Field(default_factory=dict)
+
+
+class RenewedRecommendation(BaseModel):
+    listing_id: uuid.UUID
+    return_case_id: uuid.UUID
+    title: str
+    grade: str
+    price: float
+    health_score: int
+
+
+class RenewedRecommendationsResponse(BaseModel):
+    category: str
+    recommendations: list[RenewedRecommendation] = Field(default_factory=list)

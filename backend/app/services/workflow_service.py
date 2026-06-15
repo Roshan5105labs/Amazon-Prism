@@ -189,8 +189,18 @@ def apply_vendor_decision(
 
     latest_routing.vendor_permission_status = decision
     if decision == VendorPermissionStatus.APPROVED:
-        return_case.status = ReturnCaseStatus.COMPLETED
-        message = "Vendor approved the routing decision."
+        # A PRECHECK SEND_TO_VENDOR_OR_WAREHOUSE decision is only permission to bring
+        # the item in for physical/final verification. It is not the terminal disposition.
+        # Terminal routes, listings, and green credits are produced after FINAL_CHECK.
+        if (
+            latest_routing.stage == InspectionStage.PRECHECK
+            and latest_routing.decision == RoutingDecisionType.SEND_TO_VENDOR_OR_WAREHOUSE
+        ):
+            return_case.status = ReturnCaseStatus.FINAL_CHECK_PENDING
+            message = "Vendor approved intake for final inspection."
+        else:
+            return_case.status = ReturnCaseStatus.COMPLETED
+            message = "Vendor approved the routing decision."
     else:
         return_case.status = ReturnCaseStatus.VENDOR_REJECTED
         message = "Vendor rejected the routing decision."

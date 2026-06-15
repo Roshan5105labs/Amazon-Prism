@@ -1,0 +1,15 @@
+.env
+.env.aws.local
+backend/.env
+backend/.env.aws.local
+.venv
+backend/.venv
+myenv
+amazon-prism-backend
+__pycache__
+*.pyc
+.git
+node_modules
+dist
+photo.jpg
+sample.jpg

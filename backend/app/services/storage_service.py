@@ -19,6 +19,7 @@ def get_storage_client() -> Minio:
         access_key=settings.minio_access_key,
         secret_key=settings.minio_secret_key,
         secure=settings.minio_secure,
+        region=settings.minio_region,
     )
 
 
@@ -32,6 +33,17 @@ def ensure_bucket_exists() -> None:
 def build_object_url(object_key: str) -> str:
     settings = get_settings()
     return f"{settings.minio_public_base_url}/{settings.minio_bucket}/{quote(object_key)}"
+
+
+def get_file_bytes(object_key: str) -> bytes:
+    settings = get_settings()
+    client = get_storage_client()
+    response = client.get_object(settings.minio_bucket, object_key)
+    try:
+        return response.read()
+    finally:
+        response.close()
+        response.release_conn()
 
 
 async def upload_file_to_storage(

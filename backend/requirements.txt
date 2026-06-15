@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+uvicorn[standard]
 python-multipart
 sqlalchemy
 sqlmodel
@@ -8,3 +8,5 @@ pydantic
 pydantic-settings
 python-dotenv
 minio
+google-genai
+boto3

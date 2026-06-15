@@ -3,15 +3,19 @@ from __future__ import annotations
 import uuid
 from collections import Counter
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from sqlmodel import Session, desc, select
 
 from app.constants import InspectionStage, ReturnCaseStatus, VendorPermissionStatus
 from app.database import get_session
 from app.models import ReturnCase, ReturnMedia
 from app.schemas import (
     AIAssessmentCreate,
+    CaseGreenCreditsResponse,
     FinalCheckResponse,
+    GreenCreditSummaryResponse,
+    RenewedRecommendation,
+    RenewedRecommendationsResponse,
     ListingPreviewRead,
     MediaUploadResponse,
     PreventionResponse,
@@ -25,7 +29,9 @@ from app.schemas import (
     VendorDecisionRequest,
     VendorDecisionResponse,
 )
-from app.services.storage_service import upload_file_to_storage
+from app.services.vision_service import assess_media
+from app.services.green_credit_service import get_case_credits, get_credit_summary
+from app.services.storage_service import get_file_bytes, upload_file_to_storage
 from app.services.workflow_service import (
     apply_assessment_workflow,
     apply_vendor_decision,
@@ -108,6 +114,36 @@ def submit_ai_assessment(
     return apply_assessment_workflow(return_case, payload, session)
 
 
+@router.post("/return-cases/{return_case_id}/run-ai-assessment", response_model=ReturnCaseWorkflowResponse)
+def run_ai_assessment(
+    return_case_id: uuid.UUID,
+    stage: InspectionStage = Query(default=InspectionStage.PRECHECK),
+    session: Session = Depends(get_session),
+):
+    """Run the vision model on the case's media for `stage` (images and/or a
+    video) and push the result through the assessment workflow."""
+    return_case = _get_return_case_or_404(return_case_id, session)
+    media = session.exec(
+        select(ReturnMedia)
+        .where(ReturnMedia.return_case_id == return_case_id, ReturnMedia.stage == stage)
+        .order_by(desc(ReturnMedia.created_at))
+    ).all()
+    if not media:
+        raise HTTPException(status_code=400, detail=f"Upload {stage.value} media first")
+
+    images: list[tuple[bytes, str]] = []
+    video = None
+    for m in media:
+        ctype = (m.content_type or "").lower()
+        if ctype.startswith("video/") and video is None:
+            video = (get_file_bytes(m.object_key), ctype, m.file_name)
+        elif ctype.startswith("image/"):
+            images.append((get_file_bytes(m.object_key), ctype))
+
+    payload = assess_media(return_case, stage, images, video)
+    return apply_assessment_workflow(return_case, payload, session)
+
+
 @router.post("/return-cases/{return_case_id}/final-check", response_model=FinalCheckResponse)
 async def upload_final_check(
     return_case_id: uuid.UUID,
@@ -177,6 +213,43 @@ def get_return_case_listing_preview(return_case_id: uuid.UUID, session: Session 
     if listing_preview is None:
         raise HTTPException(status_code=404, detail="Listing preview not found")
     return ListingPreviewRead.model_validate(listing_preview)
+
+
+@router.get("/return-cases/{return_case_id}/green-credits", response_model=CaseGreenCreditsResponse, tags=["green-credits"])
+def get_case_green_credits(return_case_id: uuid.UUID, session: Session = Depends(get_session)):
+    _get_return_case_or_404(return_case_id, session)
+    decision, credits = get_case_credits(session, return_case_id)
+    return CaseGreenCreditsResponse(
+        return_case_id=return_case_id,
+        decision=decision.decision if decision else None,
+        green_credits_awarded=credits,
+    )
+
+
+@router.get("/green-credits/summary", response_model=GreenCreditSummaryResponse, tags=["green-credits"])
+def get_green_credits_summary(session: Session = Depends(get_session)):
+    return GreenCreditSummaryResponse(**get_credit_summary(session))
+
+
+@router.get("/recommendations", response_model=RenewedRecommendationsResponse, tags=["recommendations"])
+def renewed_recommendations(category: str, limit: int = 5, session: Session = Depends(get_session)):
+    """Personalized renewed recommendations: live renewed listings in a category."""
+    cases = session.exec(
+        select(ReturnCase).where(ReturnCase.category == category).order_by(desc(ReturnCase.created_at))
+    ).all()
+    recs: list[RenewedRecommendation] = []
+    for case in cases:
+        listing = get_latest_listing_preview(session, case.id)
+        card = get_latest_health_card(session, case.id)
+        if listing is None or card is None:
+            continue
+        recs.append(RenewedRecommendation(
+            listing_id=listing.id, return_case_id=case.id, title=listing.title,
+            grade=card.public_grade, price=listing.recommended_price, health_score=card.health_score,
+        ))
+        if len(recs) >= limit:
+            break
+    return RenewedRecommendationsResponse(category=category, recommendations=recs)
 
 
 @router.get("/prevention", response_model=PreventionResponse, tags=["prevention"])

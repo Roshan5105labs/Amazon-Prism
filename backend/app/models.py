@@ -97,6 +97,7 @@ class RoutingDecisionRecord(SQLModel, table=True):
     reason: str
     requires_vendor_permission: bool
     vendor_permission_status: str
+    green_credits_awarded: int = 0
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from app.constants import ViabilityLabel
+from app.constants import DemandLevel, DEMAND_MULTIPLIER, Grade, GRADE_PRICE_FACTOR, ViabilityLabel
 from app.models import AIAssessment, ReturnCase, ViabilityResultRecord
 
 
 def calculate_expected_resale_price(return_case: ReturnCase, assessment: AIAssessment) -> float:
-    multiplier = 0.70 if return_case.original_price < 500 else 0.75
-    return round(return_case.original_price * multiplier, 2)
+    """Condition-aware: recoverable price reflects grade and demand, not just price."""
+    grade = assessment.grade if isinstance(assessment.grade, Grade) else Grade(assessment.grade)
+    demand = (return_case.demand_level if isinstance(return_case.demand_level, DemandLevel)
+              else DemandLevel(return_case.demand_level))
+    return round(return_case.original_price * GRADE_PRICE_FACTOR.get(grade, 0.5)
+                 * DEMAND_MULTIPLIER.get(demand, 0.75), 2)
 
 
 def calculate_total_recovery_cost(return_case: ReturnCase, assessment: AIAssessment) -> float:
