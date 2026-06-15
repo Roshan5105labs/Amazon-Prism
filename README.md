@@ -559,7 +559,7 @@ Planned improvements:
 | Resource          | Link                                               |
 | ----------------- | -------------------------------------------------- |
 | Live App          | `https://staging.d4hj9vlw30urk.amplifyapp.com/`                        |
-| Demo Video        | `https://YOUR_DEMO_VIDEO_URL`                      |
+| Demo Video        | `https://youtu.be/i3QvbT3jo2c`                      |
 | GitHub Repository | `https://github.com/Roshan5105labs/Amazon-Prism` |
 
 ---
