@@ -558,9 +558,9 @@ Planned improvements:
 
 | Resource          | Link                                               |
 | ----------------- | -------------------------------------------------- |
-| Live App          | `https://YOUR_LIVE_APP_URL`                        |
+| Live App          | `https://staging.d4hj9vlw30urk.amplifyapp.com/`                        |
 | Demo Video        | `https://YOUR_DEMO_VIDEO_URL`                      |
-| GitHub Repository | `https://github.com/YOUR_USERNAME/YOUR_REPOSITORY` |
+| GitHub Repository | `` |
 
 ---
 
